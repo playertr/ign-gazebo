@@ -18,13 +18,26 @@
 #include "CopyPaste.hh"
 
 #include <memory>
+#include <string>
 
+#include <ignition/common/Console.hh>
+#include <ignition/msgs.hh>
 #include <ignition/plugin/Register.hh>
+#include <ignition/transport.hh>
 
 namespace ignition::gazebo
 {
   class CopyPastePrivate
   {
+    public: std::string copiedData = "";
+
+    public: transport::Node node;
+
+    public: const std::string copyService = "/gui/copy";
+
+    public: bool CopyServiceCB(const ignition::msgs::StringMsg &_req,
+                ignition::msgs::Boolean &_resp);
+
     // things to hold here:
     //  - copiedData (std::string?)
     //    - I may need a way to know if anything is copied or not
@@ -42,6 +55,12 @@ CopyPaste::CopyPaste()
   : ignition::gui::Plugin(),
   dataPtr(std::make_unique<CopyPastePrivate>())
 {
+  if (!this->dataPtr->node.Advertise(this->dataPtr->copyService,
+        &CopyPastePrivate::CopyServiceCB, this->dataPtr.get()))
+  {
+    ignerr << "Error advertising service [" << this->dataPtr->copyService
+      << "]" << std::endl;
+  }
 }
 
 /////////////////////////////////////////////////
@@ -52,6 +71,16 @@ void CopyPaste::LoadConfig(const tinyxml2::XMLElement *)
 {
   if (this->title.empty())
     this->title = "Copy/Paste";
+}
+
+/////////////////////////////////////////////////
+bool CopyPastePrivate::CopyServiceCB(const ignition::msgs::StringMsg &_req,
+    ignition::msgs::Boolean &_resp)
+{
+  this->copiedData = _req.data();
+  ignerr << "copiedData is now [" << this->copiedData << "]" << std::endl;
+  _resp.set_data(true);
+  return true;
 }
 
 // Register this plugin

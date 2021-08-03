@@ -53,6 +53,9 @@ namespace ignition::gazebo
     /// \brief Copy service name
     public: std::string copyService;
 
+    /// \brief Paste service name
+    public: std::string pasteService;
+
     /// \brief Name of world.
     public: std::string worldName;
   };
@@ -87,6 +90,9 @@ EntityContextMenu::EntityContextMenu()
 
   // For copy service requests
   this->dataPtr->copyService = "/gui/copy";
+
+  // For paste service requests
+  this->dataPtr->pasteService = "/gui/paste";
 }
 
 /////////////////////////////////////////////////
@@ -169,6 +175,11 @@ void EntityContextMenu::OnRequest(const QString &_request, const QString &_data)
     ignition::msgs::StringMsg req;
     req.set_data(_data.toStdString());
     this->dataPtr->node.Request(this->dataPtr->copyService, req, cb);
+  }
+  else if (request == "paste")
+  {
+    ignition::msgs::Empty req;
+    this->dataPtr->node.Request(this->dataPtr->pasteService, req, cb);
   }
   else
   {

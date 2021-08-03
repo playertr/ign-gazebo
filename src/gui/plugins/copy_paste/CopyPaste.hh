@@ -20,7 +20,7 @@
 
 #include <memory>
 
-#include <ignition/gui/Plugin.hh>
+#include "ignition/gazebo/gui/GuiSystem.hh"
 
 namespace ignition
 {
@@ -28,7 +28,7 @@ namespace gazebo
 {
   class CopyPastePrivate;
 
-  class CopyPaste : public ignition::gui::Plugin
+  class CopyPaste : public ignition::gazebo::GuiSystem
   {
     Q_OBJECT
 
@@ -41,7 +41,17 @@ namespace gazebo
     // Documentation inherited
     public: void LoadConfig(const tinyxml2::XMLElement *_pluginElem) override;
 
-    // TODO(adlarkin) add callbacks for whenever copy/paste is clicked?
+    // Documentation inherited
+    public: void Update(const UpdateInfo &_info,
+                EntityComponentManager &_ecm) override;
+
+    /// \brief Callback to copy the selected entity
+    /// \param[in] _copyItemName The name of the entity to be copied
+    public slots: void OnCopy(const QString &_copyItemName);
+
+    /// \brief Callback to paste the data that has been copied, if copied data
+    /// exists.
+    public slots: void OnPaste();
 
     /// \internal
     /// \brief Pointer to private data

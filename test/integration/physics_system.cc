@@ -50,6 +50,7 @@
 #include "ignition/gazebo/components/JointVelocityReset.hh"
 #include "ignition/gazebo/components/Link.hh"
 #include "ignition/gazebo/components/LinearVelocity.hh"
+#include "ignition/gazebo/components/LinearVelocityCmd.hh"
 #include "ignition/gazebo/components/Material.hh"
 #include "ignition/gazebo/components/Model.hh"
 #include "ignition/gazebo/components/Name.hh"
@@ -1667,4 +1668,80 @@ TEST_F(PhysicsSystemFixture, Heightmap)
 
   EXPECT_TRUE(checked);
   EXPECT_EQ(1000, maxIt);
+}
+
+/////////////////////////////////////////////////
+TEST_F(PhysicsSystemFixture, LinVelCmd)
+{
+  ignition::gazebo::ServerConfig serverConfig;
+
+  const auto sdfFile = common::joinPaths(PROJECT_SOURCE_PATH, "test", "worlds",
+    "lin_vel_cmd.sdf");
+
+  sdf::Root root;
+  root.Load(sdfFile);
+  const sdf::World *world = root.WorldByIndex(0);
+  ASSERT_TRUE(nullptr != world);
+
+  serverConfig.SetSdfFile(sdfFile);
+
+  gazebo::Server server(serverConfig);
+
+  server.SetUpdatePeriod(1us);
+
+  test::Relay testSystem;
+
+  auto modelEntity = kNullEntity;
+  math::Pose3d modelWorldPose;
+
+  const auto xVel = 100.0;
+  const auto dt = 0.001;
+
+  auto numPreUpdateChecks = 0;
+  auto numPostUpdateChecks = 0;
+
+  testSystem.OnPreUpdate(
+      [&](const UpdateInfo &, EntityComponentManager &_ecm)
+      {
+        modelEntity = _ecm.EntityByComponents(components::Model());
+        EXPECT_NE(kNullEntity, modelEntity);
+
+        modelWorldPose = gazebo::worldPose(modelEntity, _ecm);
+
+        _ecm.SetComponentData<components::LinearVelocityCmd>(
+            modelEntity, {xVel, 0.0, 0.0});
+
+        numPreUpdateChecks++;
+
+        return true;
+      });
+
+  testSystem.OnPostUpdate(
+      [&](const UpdateInfo &, const EntityComponentManager &_ecm)
+      {
+        // make sure that the model moved in the x direction since a
+        // command velocity in the x direction was applied to it
+        auto updatedModelWorldPose = gazebo::worldPose(modelEntity, _ecm);
+        EXPECT_DOUBLE_EQ(modelWorldPose.Y(), updatedModelWorldPose.Y());
+        EXPECT_DOUBLE_EQ(modelWorldPose.Z(), updatedModelWorldPose.Z());
+        auto xExpected = modelWorldPose.X() + (xVel * dt);
+        EXPECT_NEAR(xExpected, updatedModelWorldPose.X(), 1e-2);
+
+        numPostUpdateChecks++;
+
+        return true;
+      });
+
+  server.AddSystem(testSystem.systemPtr);
+  const auto iters = 500;
+  server.Run(true, iters, false);
+
+  EXPECT_EQ(iters, numPreUpdateChecks);
+  EXPECT_EQ(iters, numPostUpdateChecks);
+  EXPECT_NE(kNullEntity, modelEntity);
+
+// TODO(adlarkin) similar test as above, but applying a cmd to a link, not model
+// (might just be worth adding another model to the sdf test file and then
+// using the link of that model in the pre/post updates of the test fixture here
+// so that a lot of this test code isn't duplicated in another test)
 }

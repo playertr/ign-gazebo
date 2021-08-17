@@ -106,6 +106,7 @@ ign_find_package(ignition-sensors5 REQUIRED
     camera
     gpu_lidar
     imu
+    force_torque
     logical_camera
     magnetometer
     depth_camera

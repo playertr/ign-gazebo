@@ -109,6 +109,7 @@ ign_find_package(ignition-sensors3 REQUIRED
     air_pressure
     altimeter
     camera
+    force_torque
     gpu_lidar
     imu
     logical_camera

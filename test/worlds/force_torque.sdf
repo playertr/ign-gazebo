@@ -13,6 +13,10 @@
       filename="libignition-gazebo-scene-broadcaster-system.so"
       name="ignition::gazebo::systems::SceneBroadcaster">
     </plugin>
+    <plugin
+      filename="libignition-gazebo-force_torque-system.so"
+      name="ignition::gazebo::systems::ForceTorque">
+    </plugin>
 
     <model name="ground_plane">
       <static>true</static>

@@ -33,8 +33,9 @@
 #include <ignition/sensors/ForceTorqueSensor.hh>
 
 #include "ignition/gazebo/components/ForceTorque.hh"
-#include "ignition/gazebo/components/JointForce.hh"
 #include "ignition/gazebo/components/Joint.hh"
+#include "ignition/gazebo/components/JointForce.hh"
+#include "ignition/gazebo/components/JointConstraintWrench.hh"
 #include "ignition/gazebo/components/Name.hh"
 #include "ignition/gazebo/components/Pose.hh"
 #include "ignition/gazebo/components/ParentEntity.hh"
@@ -154,6 +155,7 @@ void ForceTorquePrivate::CreateForceTorqueEntities(EntityComponentManager &_ecm)
         // Set topic
         _ecm.CreateComponent(_entity, components::SensorTopic(sensor->Topic()));
         _ecm.CreateComponent(parentComp->Data(), components::JointForce());
+        _ecm.CreateComponent(parentComp->Data(), components::JointConstraintWrench());
 
         this->entitySensorMap.insert(
             std::make_pair(_entity, std::move(sensor)));
@@ -174,6 +176,27 @@ void ForceTorquePrivate::Update(const EntityComponentManager &_ecm)
         if (it != this->entitySensorMap.end())
         {
           auto parentComp = _ecm.Component<components::ParentEntity>(_entity);
+          auto name = _ecm.Component<components::Name>(parentComp->Data());
+          auto force = _ecm.Component<components::JointForce>(parentComp->Data());
+          auto wrench = _ecm.Component<components::JointConstraintWrench>(parentComp->Data());
+
+          std::cout << "Joint: " << name->Data() << " "
+                        << force->Data().size() << " " 
+                        << ": ";
+          for (const auto &jf : force->Data())
+          {
+            std::cout << jf << " ";
+          }
+          std::cout << std::endl;
+
+          std::cout << "Joint: " << name->Data() << " "
+                        << wrench->Data().size() << " " 
+                        << ": ";
+          for (const auto &jf : wrench->Data())
+          {
+            std::cout << jf << " ";
+          }
+          std::cout << std::endl;
         }
         else
         {

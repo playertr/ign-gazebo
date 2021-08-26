@@ -36,6 +36,7 @@
 #include "ignition/gazebo/components/Geometry.hh"
 #include "ignition/gazebo/components/GpuLidar.hh"
 #include "ignition/gazebo/components/Gravity.hh"
+#include "ignition/gazebo/components/ForceTorque.hh"
 #include "ignition/gazebo/components/Imu.hh"
 #include "ignition/gazebo/components/Inertial.hh"
 #include "ignition/gazebo/components/Joint.hh"
@@ -493,6 +494,17 @@ Entity SdfEntityCreator::CreateEntities(const sdf::Joint *_joint)
   this->dataPtr->ecm->CreateComponent(jointEntity,
       components::ChildLinkName(_joint->ChildLinkName()));
 
+  // Sensors
+  
+  for(uint64_t sensorIndex = 0; sensorIndex < _joint->SensorCount();
+      ++sensorIndex)
+  {
+    auto sensor = _joint->SensorByIndex(sensorIndex);
+    auto sensorEntity = this->CreateEntities(sensor);
+
+    this->SetParent(sensorEntity, jointEntity);
+  }
+
   return jointEntity;
 }
 
@@ -637,6 +649,11 @@ Entity SdfEntityCreator::CreateEntities(const sdf::Sensor *_sensor)
         components::WorldPose(math::Pose3d::Zero));
     this->dataPtr->ecm->CreateComponent(sensorEntity,
         components::WorldLinearVelocity(math::Vector3d::Zero));
+  }
+  else if (_sensor->Type() == sdf::SensorType::FORCE_TORQUE)
+  {
+    this->dataPtr->ecm->CreateComponent(sensorEntity,
+            components::ForceTorque(*_sensor));
   }
   else if (_sensor->Type() == sdf::SensorType::IMU)
   {
